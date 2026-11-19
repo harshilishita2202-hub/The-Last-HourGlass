@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#080b14" />
+  <title>THE LAST HOURGLASS</title>
+  <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+  <style>
+    :root { --gold:#e7bd72; --cream:#f7ead0; --ink:#080b14; --panel:rgba(8,12,22,.88); }
+    * { box-sizing:border-box; }
+    html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#05070d; color:var(--cream); font-family:Georgia,'Times New Roman',serif; }
+    a-scene { position:fixed; inset:0; }
+    .overlay { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:22px; background:radial-gradient(ellipse at 50% 42%,rgba(26,33,54,.48),rgba(3,5,10,.96) 72%), linear-gradient(135deg,#0b1220,#06070d); }
+    .title-card { width:min(760px,94vw); padding:clamp(25px,5vw,54px); border:1px solid rgba(231,189,114,.48); background:linear-gradient(145deg,rgba(20,24,37,.94),rgba(6,9,17,.96)); box-shadow:0 25px 90px rgba(0,0,0,.62), inset 0 0 45px rgba(231,189,114,.045); text-align:center; position:relative; }
+    .title-card:before,.title-card:after { content:"✦"; position:absolute; color:var(--gold); opacity:.8; font-size:19px; }
+    .title-card:before { top:13px; left:17px; } .title-card:after { bottom:13px; right:17px; }
+    .eyebrow { color:#c69b5d; font:600 11px/1.5 Arial,sans-serif; letter-spacing:.34em; text-transform:uppercase; }
+    h1 { margin:15px 0 9px; color:#f6e3bd; font-size:clamp(37px,7vw,70px); line-height:.98; font-weight:500; letter-spacing:.055em; text-shadow:0 4px 24px rgba(220,163,76,.18); }
+    .tagline { margin:18px 0 26px; color:#d9c8a7; font:500 12px/1.6 Arial,sans-serif; letter-spacing:.25em; }
+    .intro { max-width:540px; margin:0 auto 26px; color:#c4c1bd; font:15px/1.75 Arial,sans-serif; }
+    .button-row { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+    button { border:1px solid rgba(231,189,114,.75); padding:13px 22px; color:#1a130b; background:linear-gradient(180deg,#f1d39a,#c9964c); font:700 12px Arial,sans-serif; letter-spacing:.13em; cursor:pointer; min-width:170px; transition:transform .18s,filter .18s; }
+    button:hover { transform:translateY(-2px); filter:brightness(1.08); }
+    button.secondary { color:#ead7b2; background:rgba(255,255,255,.035); border-color:rgba(231,189,114,.35); }
+    button:focus-visible { outline:2px solid white; outline-offset:3px; }
+    .small-note { margin:20px auto 0; color:#8e8a83; font:11px/1.6 Arial,sans-serif; max-width:580px; }
+    #loading { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; background:#05070d; color:var(--gold); font:12px Arial,sans-serif; letter-spacing:.25em; }
+    #loading.active { display:flex; }
+    .loader-line { width:150px; height:2px; margin:18px auto 0; background:rgba(231,189,114,.18); overflow:hidden; }
+    .loader-line:after { content:""; display:block; width:40%; height:100%; background:var(--gold); animation:load 1.3s ease-in-out infinite; }
+    @keyframes load { from{transform:translateX(-100%)} to{transform:translateX(380%)} }
+    #desktop-hud { position:fixed; z-index:30; left:14px; right:14px; bottom:14px; pointer-events:none; display:none; color:#f9edda; font-family:Arial,sans-serif; }
+    #desktop-hud.active { display:block; }
+    #story-box { max-width:720px; margin:0 auto 9px; padding:12px 16px; background:var(--panel); border:1px solid rgba(231,189,114,.45); border-radius:8px; text-align:center; line-height:1.5; box-shadow:0 10px 36px #0008; }
+    #story-title { display:block; margin-bottom:4px; color:#f1cf91; font-size:12px; letter-spacing:.15em; font-weight:bold; }
+    #story-body { color:#e7dfd2; font-size:13px; }
+    #story-hint { display:block; margin-top:5px; color:#bdb19c; font-size:11px; }
+    #status-row { display:flex; gap:14px; justify-content:center; font-size:12px; text-shadow:0 2px 4px #000; }
+    #top-help { position:fixed; z-index:30; top:12px; left:50%; transform:translateX(-50%); display:none; max-width:94vw; padding:8px 13px; border:1px solid rgba(231,189,114,.25); border-radius:22px; background:rgba(4,7,13,.7); color:#e7d5b2; text-align:center; font:11px/1.45 Arial,sans-serif; pointer-events:none; }
+    #top-help.active { display:block; }
+    #fade-screen { position:fixed; inset:0; z-index:40; background:#020308; opacity:0; pointer-events:none; transition:opacity .75s ease; }
+    #toast-host { position:fixed; z-index:70; top:54px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:8px; width:min(420px,92vw); pointer-events:none; }
+    .toast { padding:10px 14px; color:#f8e9ca; background:rgba(8,12,20,.92); border:1px solid rgba(231,189,114,.48); text-align:center; border-radius:5px; font:12px Arial,sans-serif; box-shadow:0 8px 25px #0008; animation:toastIn .2s ease-out; }
+    @keyframes toastIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    @media(max-width:560px){ .intro{font-size:13px} .tagline{letter-spacing:.16em} button{width:100%} #status-row{font-size:10px;gap:9px} #story-body{font-size:12px} }
+  </style>
+</head>
+<body>
+  <div id="title-screen" class="overlay">
+    <main class="title-card">
+      <div class="eyebrow">A cinematic time-travel adventure</div>
+      <h1>THE LAST<br>HOURGLASS</h1>
+      <div class="tagline">YOUR TIME. YOUR CHOICES. YOUR KINGDOM.</div>
+      <p class="intro">Aarav believes there will always be time for tomorrow. One mysterious hourglass is about to prove him wrong. Travel into the past, meet the people of Eldoria, and complete your first task.</p>
+      <div class="button-row">
+        <button id="enter-vr-btn">ENTER META QUEST VR</button>
+        <button id="play-desktop-btn" class="secondary">PLAY ON DESKTOP</button>
+      </div>
+      <p class="small-note">Meta Quest 3S: left thumbstick to move · right thumbstick to snap-turn · point and press trigger to interact · look at objects to use gaze selection.<br>Desktop: WASD to move · mouse to look and click objects.</p>
+    </main>
+  </div>
+
+  <div id="loading"><div>PREPARING ELDORIA<div class="loader-line"></div></div></div>
+  <div id="fade-screen"></div>
+  <div id="top-help">Quest 3S: Left stick = move · Right stick = snap turn · Trigger = interact · Look at objects for gaze selection</div>
+  <div id="desktop-hud">
+    <div id="story-box"><strong id="story-title">AARAV'S ROOM</strong><span id="story-body">Find the mysterious hourglass.</span><small id="story-hint"></small></div>
+    <div id="status-row"><span>GOLD: <b id="gold-value">50</b></span><span>QUEST: <b id="quest-value">Talk to the farmer</b></span><span>INPUT: <b id="input-value">Desktop</b></span></div>
+  </div>
+  <div id="toast-host"></div>
+
+  <a-scene id="game-scene" embedded="false" background="color: #080b14" vr-mode-ui="enabled: false" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: false; sortObjects: true" webxr="optionalFeatures: local-floor, bounded-floor" loading-screen="enabled: false">
+    <a-assets>
+      <a-mixin id="wood" material="color: #61452f; roughness: 0.95"></a-mixin>
+      <a-mixin id="stone" material="color: #77716b; roughness: 1"></a-mixin>
+    </a-assets>
+
+    <!-- Player rig: desktop keyboard and Quest thumbstick movement are handled in JavaScript. -->
+    <a-entity id="player-rig" position="0 0 0">
+      <a-camera id="player-camera" position="0 1.62 0" look-controls="pointerLockEnabled: false" wasd-controls="enabled: false">
+        <a-entity id="gaze-cursor" cursor="fuse: true; fuseTimeout: 1200" raycaster="objects: .interactive; far: 12" geometry="primitive: ring; radiusInner: 0.008; radiusOuter: 0.014" material="color: #f2cb83; shader: flat" position="0 0 -1" scale="1 1 1" visible="false"></a-entity>
+        <a-entity id="vr-caption-panel" position="0 -0.62 -2.15" visible="true">
+          <a-plane width="2.05" height="0.58" material="color: #070b13; transparent: true; opacity: 0.82; side: double"></a-plane>
+          <a-text id="vr-story-title" value="AARAV'S ROOM" color="#f1cf91" align="center" width="1.85" position="0 0.17 0.012" wrap-count="34"></a-text>
+          <a-text id="vr-story-body" value="Find the mysterious hourglass." color="#f0e7d8" align="center" width="1.85" position="0 -0.04 0.012" wrap-count="45"></a-text>
+        </a-entity>
+        <a-text id="vr-hud" value="GOLD 50  |  FIND THE HOURGLASS" color="#f4d69d" align="center" width="1.5" position="0 0.78 -2.0" wrap-count="40"></a-text>
+        <a-plane id="vr-fade" position="0 0 -0.45" width="3" height="3" material="color: #000; transparent: true; opacity: 0; side: double; depthTest: false" visible="true"></a-plane>
+      </a-camera>
+      <a-entity id="left-controller" meta-touch-controls="hand: left" raycaster="objects: .interactive; far: 12; showLine: true" line="color: #e8c27d; opacity: 0.82"></a-entity>
+      <a-entity id="right-controller" meta-touch-controls="hand: right" raycaster="objects: .interactive; far: 12; showLine: true" line="color: #e8c27d; opacity: 0.82"></a-entity>
+    </a-entity>
+
+    <a-sky id="world-sky" color="#080d1b"></a-sky>
+    <a-entity id="present-world"></a-entity>
+    <a-entity id="village-world" visible="false"></a-entity>
+    <a-entity id="desktop-mouse-cursor" cursor="rayOrigin: mouse; fuse: false" raycaster="objects: .interactive; far: 14"></a-entity>
+  </a-scene>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const STARTING_GOLD = 50;
+    const QUEST_REWARD = 30;
+    const APPLE_TOTAL = 3;
+    const state = {
+      started: false,
+      phase: 'present', // present | travelling | village | quest | completed
+      gold: STARTING_GOLD,
+      questAccepted: false,
+      applesCollected: 0,
+      questCompleted: false,
+      rewardPaid: false
+    };
+
+    const el = id => document.getElementById(id);
+    const rig = () => el('player-rig');
+    const camera = () => el('player-camera');
+    const scene = () => el('game-scene');
+    const input = { x: 0, y: 0, keys: new Set(), rightX: 0, snapReady: true };
+    let tickInstalled = false;
+
+    function entity(tag, attrs = {}, parent) {
+      const node = document.createElement(tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined && value !== null) node.setAttribute(key, String(value));
+      }
+      (parent || scene()).appendChild(node);
+      return node;
+    }
+
+    function box(parent, id, position, scale, color, extra = {}) {
+      return entity('a-box', { id, position, scale, material: `color: ${color}; roughness: .9`, ...extra }, parent);
+    }
+
+    function label(parent, text, position, color = '#f6e5c5', width = 3) {
+      return entity('a-text', { value: text, position, align: 'center', color, width, shader: 'msdf', wrapCount: 34 }, parent);
+    }
+
+    function setStory(title, body, hint = '') {
+      el('story-title').textContent = title;
+      el('story-body').textContent = body;
+      el('story-hint').textContent = hint;
+      el('vr-story-title').setAttribute('value', title);
+      el('vr-story-body').setAttribute('value', hint ? `${body}\n${hint}` : body);
+      updateHUD();
+    }
+
+    function updateHUD() {
+      const questText = state.questCompleted ? 'Complete' : state.questAccepted ? `${state.applesCollected}/${APPLE_TOTAL} apples` : 'Talk to farmer';
+      el('gold-value').textContent = state.gold;
+      el('quest-value').textContent = questText;
+      el('vr-hud').setAttribute('value', `GOLD ${state.gold}   |   ${questText.toUpperCase()}`);
+    }
+
+    function toast(message) {
+      const node = document.createElement('div');
+      node.className = 'toast';
+      node.textContent = message;
+      el('toast-host').appendChild(node);
+      setTimeout(() => node.remove(), 2800);
+    }
+
+    function fade(callback, duration = 850) {
+      const screen = el('fade-screen');
+      const vrFade = el('vr-fade');
+      screen.style.opacity = '1';
+      vrFade.setAttribute('animation__fadein', 'property: components.material.material.opacity; from: 0; to: 1; dur: 650; easing: easeInOutQuad');
+      setTimeout(() => {
+        callback();
+        setTimeout(() => {
+          screen.style.opacity = '0';
+          vrFade.setAttribute('animation__fadeout', 'property: components.material.material.opacity; from: 1; to: 0; dur: 700; easing: easeInOutQuad');
+        }, 160);
+      }, duration);
+    }
+
+    function makeInteractive(node, action, data = {}) {
+      node.classList.add('interactive');
+      node.setAttribute('data-action', action);
+      Object.entries(data).forEach(([key, value]) => node.setAttribute(key, String(value)));
+      node.addEventListener('mouseenter', () => node.setAttribute('scale', '1.09 1.09 1.09'));
+      node.addEventListener('mouseleave', () => node.setAttribute('scale', '1 1 1'));
+      node.addEventListener('click', () => dispatch(action, node.getAttribute('data-apple-id') || null));
+      return node;
+    }
+
+    function actionFromHit(hitEl) {
+      let node = hitEl;
+      while (node && node !== scene()) {
+        const action = node.getAttribute && node.getAttribute('data-action');
+        if (action) return { action, appleId: node.getAttribute('data-apple-id') };
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function dispatch(action, appleId = null) {
+      if (action === 'hourglass') activateHourglass();
+      if (action === 'farmer') talkToFarmer();
+      if (action === 'apple') collectApple(appleId);
+    }
+
+    function setupControllers() {
+      const left = el('left-controller');
+      const right = el('right-controller');
+      [left, right].forEach(controller => {
+        controller.addEventListener('triggerdown', () => {
+          const intersections = controller.components.raycaster && controller.components.raycaster.intersections;
+          if (!intersections || !intersections.length) return;
+          const hit = intersections[0].object && intersections[0].object.el;
+          const found = actionFromHit(hit);
+          if (found) dispatch(found.action, found.appleId);
+        });
+      });
+
+      left.addEventListener('thumbstickmoved', event => {
+        input.x = event.detail.x || 0;
+        input.y = event.detail.y || 0;
+      });
+      left.addEventListener('thumbstickup', () => { input.x = 0; input.y = 0; });
+
+      right.addEventListener('thumbstickmoved', event => {
+        const x = event.detail.x || 0;
+        if (Math.abs(x) < 0.25) input.snapReady = true;
+        if (input.snapReady && Math.abs(x) > 0.72) {
+          rig().object3D.rotation.y += x > 0 ? -Math.PI / 6 : Math.PI / 6;
+          input.snapReady = false;
+        }
+      });
+    }
+
+    function setupKeyboard() {
+      window.addEventListener('keydown', event => {
+        const key = event.key.toLowerCase();
+        if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)) {
+          input.keys.add(key);
+          if (state.started) event.preventDefault();
+        }
+      });
+      window.addEventListener('keyup', event => input.keys.delete(event.key.toLowerCase()));
+      window.addEventListener('blur', () => input.keys.clear());
+    }
+
+    function installMovementTick() {
+      if (tickInstalled) return;
+      tickInstalled = true;
+      const move = (time, delta) => {
+        if (!state.started || !rig() || !camera()) return;
+        const maxDelta = Math.min(delta / 1000, 0.04);
+        let x = input.x;
+        let y = input.y;
+        if (input.keys.has('a') || input.keys.has('arrowleft')) x -= 1;
+        if (input.keys.has('d') || input.keys.has('arrowright')) x += 1;
+        if (input.keys.has('w') || input.keys.has('arrowup')) y -= 1;
+        if (input.keys.has('s') || input.keys.has('arrowdown')) y += 1;
+        if (Math.abs(x) < 0.14) x = 0;
+        if (Math.abs(y) < 0.14) y = 0;
+        if (!x && !y) return;
+        const direction = new THREE.Vector3();
+        camera().object3D.getWorldDirection(direction);
+        direction.y = 0;
+        direction.normalize();
+        const right = new THREE.Vector3(-direction.z, 0, direction.x);
+        const movement = direction.multiplyScalar(-y).add(right.multiplyScalar(x));
+        if (movement.lengthSq() > 1) movement.normalize();
+        rig().object3D.position.addScaledVector(movement, maxDelta * 2.15);
+      };
+      let previousFrame = performance.now();
+      const loop = now => {
+        const delta = Math.min(now - previousFrame, 40);
+        previousFrame = now;
+        if (scene().renderer) move(now, delta);
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    }
+
+    function addLighting(parent, village = false) {
+      entity('a-entity', { light: `type: ambient; color: ${village ? '#bac3d0' : '#8391ad'}; intensity: ${village ? '.78' : '.48'}` }, parent);
+      entity('a-entity', { light: `type: directional; color: ${village ? '#ffd4a0' : '#91a8d4'}; intensity: ${village ? '1.0' : '.72'}`, position: '-3 7 4' }, parent);
+      entity('a-entity', { light: `type: point; color: ${village ? '#ffb45e' : '#4f8fd0'}; intensity: '.72; distance: 14`, position: '1 2.8 -3' }, parent);
+    }
+
+    function buildBedroom() {
+      const world = el('present-world');
+      addLighting(world, false);
+      entity('a-plane', { position: '0 0 -3.2', rotation: '-90 0 0', width: 12, height: 11, material: 'color: #242532; roughness: 1' }, world);
+      box(world, 'bedroom-back-wall', '0 2.55 -8.5', '12 5.1 .22', '#171b2a');
+      box(world, 'bedroom-left-wall', '-6 2.55 -3.2', '.22 5.1 10.6', '#202332');
+      box(world, 'bedroom-right-wall', '6 2.55 -3.2', '.22 5.1 10.6', '#181d2a');
+      box(world, 'bedroom-ceiling', '0 5.1 -3.2', '12 .12 10.6', '#101522');
+
+      // Bed, pillow and folded blanket.
+      box(world, 'bed-frame', '-3.7 .35 -3.7', '2.45 .45 3.05', '#342b39');
+      box(world, 'bed-mattress', '-3.7 .62 -3.7', '2.38 .2 2.95', '#766274');
+      box(world, 'bed-pillow', '-3.7 .77 -4.85', '1.05 .15 .55', '#d1c5cb');
+      box(world, 'bed-blanket', '-3.7 .75 -2.8', '2.35 .1 1.4', '#384a62');
+
+      // Desk, computer and chair.
+      box(world, 'desk-top', '.2 1.02 -3.8', '3.15 .14 1.05', '#63452f');
+      box(world, 'desk-leg-left', '-1.1 .5 -3.8', '.12 1 .12', '#292832');
+      box(world, 'desk-leg-right', '1.5 .5 -3.8', '.12 1 .12', '#292832');
+      box(world, 'monitor-frame', '.15 1.79 -4.29', '1.55 1.05 .13', '#070a12');
+      box(world, 'monitor-screen', '.15 1.79 -4.21', '1.4 .89 .025', '#133b62', { material: 'color: #133b62; emissive: #0b3d70; emissiveIntensity: .55; roughness: .25' });
+      box(world, 'monitor-ui-line', '.15 1.72 -4.19', '.8 .025 .012', '#57b9e9', { material: 'color: #57b9e9; emissive: #267eb4; emissiveIntensity: .9' });
+      box(world, 'keyboard', '.15 1.12 -3.45', '.95 .045 .29', '#171a23');
+      entity('a-cylinder', { position: '.0 .68 -2.45', radius: '.49', height: '.12', color: '#242a38' }, world);
+      entity('a-cylinder', { position: '.0 1.08 -2.45', radius: '.12', height: '.82', color: '#343849' }, world);
+      box(world, 'chair-back', '0 1.5 -2.52', '.78 .85 .18', '#70364a');
+
+      // Wall clock.
+      entity('a-cylinder', { position: '-3.9 3.05 -8.35', rotation: '90 0 0', radius: '.52', height: '.08', color: '#c6ad80' }, world);
+      entity('a-circle', { position: '-3.9 3.05 -8.29', radius: '.43', material: 'color: #eee3ca; side: double' }, world);
+      box(world, 'clock-hour-hand', '-3.9 3.08 -8.23', '.045 .24 .025', '#30251f');
+      box(world, 'clock-minute-hand', '-3.84 3.17 -8.225', '.035 .34 .025', '#30251f', { rotation: '0 0 38' });
+      label(world, '11:47', '-3.9 2.55 -8.22', '#332b22', 1.15);
+
+      // Scattered coins to reinforce the story.
+      [['-1.2 .12 -3.1','#d8ad50'],['-1.48 .12 -3.38','#bc8738'],['1.8 .12 -3.1','#e5bf68'],['-1.65 .12 -2.85','#d5a442']].forEach(([p,c]) => entity('a-cylinder', { position:p, rotation:'90 0 0', radius:'.13', height:'.035', color:c }, world));
+
+      // Hourglass: the visible body itself is part of the interactive hit target.
+      const hg = entity('a-entity', { id:'hourglass', position:'1.1 1.3 -3.05' }, world);
+      makeInteractive(entity('a-sphere', { id:'hourglass-target', position:'0 0 0', radius:'.63', material:'color:#fff; transparent:true; opacity:.015' }, hg), 'hourglass');
+      entity('a-cylinder', { position:'0 .55 0', radius:'.32', height:'.11', color:'#c79546', metalness:'.65' }, hg);
+      entity('a-cylinder', { position:'0 -.55 0', radius:'.32', height:'.11', color:'#c79546', metalness:'.65' }, hg);
+      entity('a-sphere', { position:'0 .27 0', radius:'.29', scale:'1 .86 .86', material:'color:#b7d8e8; transparent:true; opacity:.32; metalness:.35; roughness:.1' }, hg);
+      entity('a-sphere', { position:'0 -.27 0', radius:'.29', scale:'1 .86 .86', material:'color:#b7d8e8; transparent:true; opacity:.32; metalness:.35; roughness:.1' }, hg);
+      entity('a-cylinder', { position:'0 0 0', radius:'.055', height:'.38', material:'color:#f4c45b; emissive:#d88b19; emissiveIntensity:.9' }, hg);
+      entity('a-torus', { position:'0 0 0', radius:'.39', radiusTubular:'.035', material:'color:#f2ca78; emissive:#b97822; emissiveIntensity:.6' }, hg);
+      label(world, 'THE MYSTERIOUS HOURGLASS', '1.1 2.12 -3.05', '#f5d99a', 2.9);
+
+      // Time portal, dormant until the object is activated.
+      const portal = entity('a-entity', { id:'time-portal', position:'0 2.0 -8.34', visible:'false', scale:'.02 .02 .02' }, world);
+      entity('a-torus', { position:'0 0 0', radius:'1.28', radiusTubular:'.09', material:'color:#e6ba69; emissive:#c47c2c; emissiveIntensity:1.15; metalness:.45' }, portal);
+      entity('a-torus', { position:'0 0 .015', radius:'1.08', radiusTubular:'.025', material:'color:#7ebde0; emissive:#367fb5; emissiveIntensity:1.2' }, portal);
+      entity('a-circle', { position:'0 0 .02', radius:'1.05', material:'color:#244d7c; transparent:true; opacity:.65; emissive:#14375f; emissiveIntensity:.7; side:double' }, portal);
+      label(world, 'AARAV\'S ROOM', '0 4.15 -6.1', '#bdc7d9', 3.2);
+      label(world, 'ONE MORE NIGHT. ONE MORE TOMORROW.', '0 3.75 -6.1', '#929db4', 2.6);
+    }
+
+    function buildVillage() {
+      const world = el('village-world');
+      addLighting(world, true);
+      entity('a-plane', { position:'0 -.025 -5', rotation:'-90 0 0', width:36, height:34, material:'color:#42533b; roughness:1' }, world);
+      entity('a-plane', { position:'0 .006 -6.5', rotation:'-90 0 0', width:3.0, height:24, material:'color:#927858; roughness:1' }, world);
+
+      // Distant castle silhouette.
+      const castle = entity('a-entity', { position:'0 0 -18' }, world);
+      box(castle,'castle-main','0 2.0 0','5.8 4 1.8','#69636a');
+      box(castle,'castle-wall','0 1.25 1.0','7.2 2.5 .65','#82766e');
+      [-2.3,2.3].forEach(x => {
+        entity('a-cylinder',{position:`${x} 3.65 -.1`,radius:'.62',height:'3.5',color:'#756b70'},castle);
+        entity('a-cone',{position:`${x} 5.55 -.1`,radiusBottom:'.82',radiusTop:'.02',height:'1.25',color:'#493847'},castle);
+      });
+      entity('a-cone',{position:'0 5.2 -.15',radiusBottom:'1.0',radiusTop:'.03',height:'2.0',color:'#533c4a'},castle);
+
+      // Medieval houses.
+      const houses=[[-5.0,-3.5],[5.0,-4.5],[-6.0,-10.2],[6.2,-10.6]];
+      houses.forEach(([x,z],i)=>{
+        const h=entity('a-entity',{position:`${x} 0 ${z}`},world);
+        box(h,`house-${i}-body`,'0 1.28 0','3.5 2.55 2.9',i%2?'#79533d':'#896044');
+        entity('a-cone',{position:'0 3.0 0',radiusBottom:'2.35',radiusTop:'.04',height:'1.45',color:'#4d3540'},h);
+        box(h,`house-${i}-door`,'0 .85 -1.49','.66 1.7 .08','#39271f');
+        [-.95,.95].forEach(wx=>box(h,`house-${i}-window-${wx}`,`${wx} 1.7 -1.5`,'.48 .52 .06','#f3bc72',{material:'color:#f3bc72; emissive:#a85c24; emissiveIntensity:.55'}));
+        box(h,`house-${i}-beam`,'0 2.48 -1.53','3.6 .13 .1','#4b3027');
+      });
+
+      // Tree row around orchard.
+      [[-3.6,-6.1],[-4.5,-8.8],[3.7,-7.5],[4.7,-10.1],[-2.8,-12.1],[2.5,-12.2]].forEach(([x,z],i)=>{
+        const t=entity('a-entity',{position:`${x} 0 ${z}`},world);
+        entity('a-cylinder',{position:'0 .92 0',radius:'.17',height:'1.85',color:'#5a3929'},t);
+        entity('a-sphere',{position:'0 2.15 0',radius:'1.0',color:i%2?'#3c6942':'#527a47'},t);
+      });
+      label(world,'ELDORIA','0 5.0 -15.2','#fff0d2',5.5);
+      label(world,'A KINGDOM LOST IN TIME','0 4.55 -15.2','#f2c9a9',2.8);
+
+      // Farmer NPC, built from simple lightweight shapes.
+      const farmer=entity('a-entity',{id:'farmer-npc',position:'-1.15 0 -3.15'},world);
+      entity('a-cylinder',{position:'0 .92 0',radius:'.34',height:'1.12',color:'#627447'},farmer);
+      entity('a-sphere',{position:'0 1.68 0',radius:'.29',color:'#d6a37b'},farmer);
+      entity('a-cone',{position:'0 2.02 0',radiusBottom:'.43',radiusTop:'.03',height:'.35',color:'#68452f'},farmer);
+      entity('a-cylinder',{position:'0 .28 0',radius:'.13',height:'.52',color:'#49352d'},farmer);
+      entity('a-cylinder',{position:'-.2 .02 0',radius:'.09',height:'.48',color:'#49352d'},farmer);
+      entity('a-cylinder',{position:'.2 .02 0',radius:'.09',height:'.48',color:'#49352d'},farmer);
+      makeInteractive(entity('a-sphere',{id:'farmer-hitbox',position:'0 1.02 .05',radius:'.65',material:'color:#fff;transparent:true;opacity:.015'},farmer),'farmer');
+      label(farmer,'FARMER','0 2.38 0','#fff0d1',1.55);
+
+      // Orchard sign and fence.
+      const sign=entity('a-entity',{position:'1.4 0 -4.8'},world);
+      box(sign,'orchard-sign','0 1.27 0','1.9 .72 .12','#69452f');
+      label(sign,'APPLE ORCHARD','0 1.18 .08','#f7e2bc',1.45);
+      entity('a-cylinder',{position:'0 .57 0',radius:'.07',height:'1.14',color:'#4e3423'},sign);
+      [-1.7,-.55,.6,1.75].forEach(x=>box(world,`fence-post-${x}`,`${x} .43 -5.4`,'.12 .86 .12','#69452f'));
+      box(world,'fence-rail-a','0 .55 -5.4','3.7 .12 .12','#765238');
+      box(world,'fence-rail-b','0 .27 -5.4','3.7 .12 .12','#765238');
+
+      // Three clearly visible, individually selectable apples.
+      const apples=[{id:'apple-1',x:.35,z:-6.1},{id:'apple-2',x:2.55,z:-7.1},{id:'apple-3',x:1.05,z:-9.0}];
+      apples.forEach((apple,index)=>{
+        const pickup=entity('a-entity',{id:`pickup-${index+1}`,position:`${apple.x} .78 ${apple.z}`},world);
+        const fruit=makeInteractive(entity('a-sphere',{id:apple.id,radius:'.24',color:index===1?'#d94b38':'#c93632',material:'color:#cc3d32;roughness:.38;metalness:.02'},pickup),'apple',{'data-apple-id':apple.id});
+        entity('a-cylinder',{position:'0 .24 0',radius:'.025',height:'.12',color:'#634027'},fruit);
+        entity('a-sphere',{position:'.1 .2 0',radius:'.075',scale:'1.4 .45 .8',color:'#598248'},fruit);
+        label(pickup,`APPLE ${index+1}`,'0 .43 0','#ffe7c0',1.05);
+      });
+      label(world,'RETURN TO THE FARMER','-1.15 2.78 -3.15','#f8dca8',2.9);
+    }
+
+    function activateHourglass() {
+      if (state.phase !== 'present') return;
+      state.phase='travelling';
+      setStory('THE HOURGLASS AWAKENS','The clock begins to run backwards. Golden sand rises through the glass. The room trembles around Aarav.','A strange portal is opening...');
+      toast('The hourglass is awakening...');
+      const portal=el('time-portal');
+      portal.setAttribute('visible','true');
+      portal.setAttribute('animation__open','property: scale; from: .02 .02 .02; to: 1 1 1; dur: 1200; easing: easeOutElastic');
+      portal.setAttribute('animation__spin','property: rotation; to: 0 0 360; dur: 2200; easing: linear');
+      ['clock-hour-hand','clock-minute-hand'].forEach(id=>{
+        const hand=el(id);
+        if(hand) hand.setAttribute('animation__reverse','property: rotation; to: 0 0 -1440; dur: 1650; easing: linear');
+      });
+      el('hourglass').setAttribute('animation__spin','property: rotation; to: 0 720 0; dur: 1800; easing: easeInOutQuad');
+      el('hourglass').setAttribute('animation__pulse','property: scale; from: 1 1 1; to: 1.17 1.17 1.17; dur: 450; dir: alternate; loop: 3');
+      setTimeout(()=>fade(()=>{
+        el('present-world').setAttribute('visible','false');
+        el('village-world').setAttribute('visible','true');
+        el('world-sky').setAttribute('color','#b87965');
+        rig().object3D.position.set(0,0,1.8);
+        rig().object3D.rotation.set(0,0,0);
+        camera().object3D.rotation.set(0,0,0);
+        state.phase='village';
+        setStory('WELCOME TO ELDORIA','Aarav wakes in a strange medieval village. A farmer notices him nearby.\n\nAarav: “Where am I? What year is this?”','Find the farmer in the village square and interact with him.');
+        toast('You have travelled to the past.');
+      },900),1250);
+    }
+
+    function talkToFarmer() {
+      if (state.phase==='present' || state.phase==='travelling') return;
+      if (!state.questAccepted) {
+        state.questAccepted=true;
+        state.phase='quest';
+        setStory('THE FARMER’S REQUEST','Farmer: “Stranger, three apples have fallen around my orchard. Please collect all three and bring them back to me.”','OBJECTIVE: Collect 3 apples. Use the controller trigger or gaze at each apple.');
+        toast('Quest accepted: The Farmer’s Request');
+        return;
+      }
+      if (state.applesCollected<APPLE_TOTAL) {
+        const remaining=APPLE_TOTAL-state.applesCollected;
+        setStory('THE FARMER','Farmer: “Thank you for helping. I still need '+remaining+' more apple'+(remaining===1?'':'s')+'.”','PROGRESS: '+state.applesCollected+'/'+APPLE_TOTAL);
+        toast(remaining+' apple'+(remaining===1?'':'s')+' left to collect.');
+        return;
+      }
+      completeQuest();
+    }
+
+    function collectApple(id) {
+      if (!state.questAccepted) { toast('Talk to the farmer before collecting apples.'); return; }
+      if (state.questCompleted || !id) return;
+      const apple=el(id);
+      if (!apple || apple.getAttribute('data-collected')==='true') return;
+      apple.setAttribute('data-collected','true');
+      apple.parentElement.setAttribute('visible','false');
+      apple.classList.remove('interactive');
+      state.applesCollected=Math.min(APPLE_TOTAL,state.applesCollected+1);
+      updateHUD();
+      if(state.applesCollected<APPLE_TOTAL) {
+        setStory('APPLE COLLECTED','You found an apple. '+state.applesCollected+' of '+APPLE_TOTAL+' collected.','Find the remaining apples in the orchard.');
+        toast('Apple collected: '+state.applesCollected+'/'+APPLE_TOTAL);
+      } else {
+        setStory('ALL APPLES FOUND','You have collected all three apples.','Return to the farmer and interact with him to complete the quest.');
+        toast('All three apples found. Return to the farmer.');
+      }
+    }
+
+    function completeQuest() {
+      if(state.questCompleted || state.rewardPaid || state.applesCollected!==APPLE_TOTAL) return;
+      state.questCompleted=true;
+      state.rewardPaid=true;
+      state.phase='completed';
+      state.gold+=QUEST_REWARD;
+      updateHUD();
+      setStory('QUEST COMPLETE','Farmer: “You have helped our village. Please accept these 30 gold coins.”\n\nAarav: “I guess I’ll have to earn my way here…”','REWARD: +30 GOLD  ·  TOTAL: '+state.gold+' GOLD');
+      toast('Quest completed! +30 gold.');
+      const farmer=el('farmer-npc');
+      farmer.setAttribute('animation__celebrate','property: rotation; to: 0 10 0; dur: 220; dir: alternate; loop: 4');
+    }
+
+    function startGame() {
+      if(state.started) return;
+      state.started=true;
+      el('title-screen').style.display='none';
+      el('desktop-hud').classList.add('active');
+      el('top-help').classList.add('active');
+      setStory('AARAV’S ROOM','Aarav spends another night gaming and buying things he does not need. He keeps telling himself he has plenty of time to plan his future.','Find the glowing hourglass on the desk and interact with it.');
+      toast('Find the mysterious hourglass.');
+    }
+
+    function init() {
+      if(!window.AFRAME) { alert('A-Frame could not load. Check your internet connection and reload.'); return; }
+      buildBedroom();
+      buildVillage();
+      el('village-world').setAttribute('visible','false');
+      setupControllers();
+      setupKeyboard();
+      installMovementTick();
+      scene().addEventListener('enter-vr',()=>{
+        el('gaze-cursor').setAttribute('visible','true');
+        el('input-value').textContent='Quest VR';
+      });
+      scene().addEventListener('exit-vr',()=>{
+        el('gaze-cursor').setAttribute('visible','false');
+        el('input-value').textContent='Desktop';
+      });
+      updateHUD();
+      el('loading').classList.remove('active');
+    }
+
+    el('play-desktop-btn').addEventListener('click',()=>startGame());
+    el('enter-vr-btn').addEventListener('click',async()=>{
+      startGame();
+      try {
+        if (scene().enterVR) await scene().enterVR();
+        else toast('VR entry is not available in this browser. Try Play on Desktop.');
+      } catch(error) {
+        console.warn('WebXR entry failed:',error);
+        toast('VR needs Meta Quest Browser and a secure HTTPS or localhost page.');
+      }
+    });
+
+    el('loading').classList.add('active');
+    if(scene().hasLoaded) init();
+    else scene().addEventListener('loaded',init,{once:true});
+  })();
+  </script>
+</body>
+</html>
